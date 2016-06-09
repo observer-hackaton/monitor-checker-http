@@ -2,13 +2,17 @@
 import pika
 import json
 import requests
+import os
 
 RABBIT_MQ_SERVER = os.environ["RABBIT_MQ_SERVER"]
+RABBIT_MQ_USER = os.environ["RABBIT_MQ_USER"]
+RABBIT_MQ_PWD = os.environ["RABBIT_MQ_PWD"]
+
+credentials = pika.PlainCredentials(RABBIT_MQ_USER, RABBIT_MQ_PWD)
 
 connection = pika.BlockingConnection(pika.ConnectionParameters(
-               RABBIT_MQ_SERVER))
+               RABBIT_MQ_SERVER, credentials = credentials))
 channel = connection.channel()
-channel.queue_declare(queue='http')
 
 def callback(ch, method, properties, body):
     req = json.loads(body)
@@ -21,10 +25,8 @@ def callback(ch, method, properties, body):
     print req
     print r.status_code
     resp = json.dumps(req)
-    print resp
-    channel.queue_declare(queue='results')
     channel.basic_publish(exchange='results',
-                          routing_key='results',
+                          routing_key='',
                           body=resp)
 
 channel.basic_consume(callback,
