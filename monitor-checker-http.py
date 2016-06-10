@@ -3,6 +3,8 @@ import pika
 import json
 import requests
 import os
+import time
+import datetime
 
 RABBIT_MQ_SERVER = os.environ["RABBIT_MQ_SERVER"]
 RABBIT_MQ_USER = os.environ["RABBIT_MQ_USER"]
@@ -18,7 +20,9 @@ def callback(ch, method, properties, body):
     req = json.loads(body)
     host = json.loads(req["monitor"]["check"]["arguments"])["host"]
     r = requests.get(host)
+    ts = time.time()
     req["monitor"]["result"]= {}
+    req["monitor"]["result"]["timestamp"] = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
     req["monitor"]["result"]["status"] = "ok" if r.status_code == 200 else "fail"
     req["monitor"]["result"]["check"] = req["monitor"]["check"]
     del req["monitor"]["check"]
